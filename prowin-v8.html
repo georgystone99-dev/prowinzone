@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PROWIN ZONE - Pronostics Sportifs IA</title>
+
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8178614539822210" crossorigin="anonymous"></script>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#10b981', 600: '#059669' }
+          }
+        }
+      }
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between antialiased selection:bg-emerald-500 selection:text-black">
+
+  <!-- ========================================== -->
+  <!-- 1. EN-TÊTE ET NAVIGATION STICKY (PERMANENTE) -->
+  <!-- ========================================== -->
+  <header class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md border-b border-slate-800/80 px-3 py-2 space-y-2">
+    <div class="max-w-md mx-auto flex items-center justify-between gap-2">
+      <!-- Logo et Titre -->
+      <div class="flex items-center gap-2 cursor-pointer" onclick="switchView('home_top6')">
+        <div class="w-8 h-8 rounded-lg bg-emerald-950 border border-emerald-500/40 flex items-center justify-center text-xs font-black text-emerald-400 shadow-sm">
+          PW
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-base font-extrabold text-white tracking-tight">PROWIN ZONE</h1>
+            <span class="text-[9px] bg-emerald-950 text-emerald-400 font-bold px-1.5 py-0.5 rounded-full border border-emerald-800/60">LIVE IA</span>
+          </div>
+          <span class="text-[9px] text-slate-400 font-medium">Algorithme Prédictif v4.2</span>
+        </div>
+      </div>
+
+      <!-- Navigation Calendrier J-1 / J / J+1 -->
+      <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-0.5 shadow-inner">
+        <button onclick="changeDay(-1)" title="Jour précédent" class="w-6 h-6 flex items-center justify-center rounded text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 text-xs font-bold">
+          &larr;
+        </button>
+        <span id="label-date-header" class="text-[10px] font-bold text-slate-200 px-1 capitalize min-w-[75px] text-center">
+          Aujourd'hui
+        </span>
+        <button onclick="changeDay(1)" title="Jour suivant" class="w-6 h-6 flex items-center justify-center rounded text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 text-xs font-bold">
+          &rarr;
+        </button>
+      </div>
+
+      <!-- Actualisation -->
+      <button onclick="refreshData()" title="Recharger les matchs" class="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white active:scale-95 transition-all">
+        <svg id="icon-refresh" class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Sélecteurs de sports et filtres collants -->
+    <div class="max-w-md mx-auto space-y-1.5 pt-1">
+      <div class="grid grid-cols-2 gap-2">
+        <button id="btn-football" onclick="selectSport('football')" class="p-2 rounded-xl border text-left transition-all active:scale-[0.98] bg-slate-900/90 border-slate-800">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm">&#9917;</span>
+              <span class="text-xs font-extrabold text-white">Football</span>
+            </div>
+            <span id="badge-count-football" class="text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums bg-slate-800 text-slate-400">Direct</span>
+          </div>
+          <div class="mt-0.5 text-[10px] text-slate-400" id="subtext-football">Liste complète &rarr;</div>
+        </button>
+
+        <button id="btn-basketball" onclick="selectSport('basketball')" class="p-2 rounded-xl border text-left transition-all active:scale-[0.98] bg-slate-900/90 border-slate-800">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm">&#127936;</span>
+              <span class="text-xs font-extrabold text-white">Basketball</span>
+            </div>
+            <span id="badge-count-basketball" class="text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums bg-slate-800 text-slate-400">Direct</span>
+          </div>
+          <div class="mt-0.5 text-[10px] text-slate-400" id="subtext-basketball">Liste complète &rarr;</div>
+        </button>
+      </div>
+
+      <!-- Barre de Filtres horizontaux par Pays -->
+      <div>
+        <div class="text-[10px] text-slate-400 font-semibold mb-1 flex items-center justify-between">
+          <span>Filtre par pays / continent :</span>
+          <span id="active-country-label" class="text-emerald-400">Tous les pays</span>
+        </div>
+        <div id="countries-bar" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+          <!-- Rendu dynamique -->
+        </div>
+      </div>
+
+      <!-- Bouton Revenir à l'Accueil -->
+      <button id="btn-back-home" onclick="switchView('home_top6')" class="hidden w-full py-1.5 px-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white transition-all text-center">
+        &larr; Revenir à l'accueil (Top 10 football du jour)
+      </button>
+    </div>
+  </header>
+
+  <!-- Titre de section -->
+  <div class="max-w-md w-full mx-auto px-3 py-1 flex items-center justify-between">
+    <h2 id="section-title" class="text-[11px] font-black uppercase tracking-wider text-slate-300 flex items-center gap-1">
+      Page d'Accueil : Top 10 Football
+    </h2>
+    <span id="section-hint" class="text-[10px] text-slate-400">Sélection élite</span>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. ZONE CENTRALE : MATCHS & PUBS ADSENSE -->
+  <!-- ========================================== -->
+  <main class="max-w-md w-full mx-auto flex-1 px-3 py-1 space-y-2.5 overflow-y-auto" id="matches-container">
+    <!-- Rendu dynamique -->
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 3. FOOTER AVEC ANNONCE GOOGLE ADSENSE FIXE -->
+  <!-- ========================================== -->
+  <footer class="w-full bg-slate-950 border-t border-slate-800 shadow-2xl z-20 mt-2">
+    <div class="max-w-md mx-auto">
+      <div class="bg-slate-900/90 px-3 py-1 border-b border-slate-800 flex items-center justify-between text-[9px] text-slate-400">
+        <div class="flex items-center gap-1.5">
+          <span class="bg-amber-400 text-slate-950 font-black px-1 rounded-sm text-[8px] uppercase">Annonce</span>
+          <span class="font-semibold text-slate-300">Google AdSense</span>
+        </div>
+        <button onclick="openPrivacyModal()" class="text-emerald-400 hover:text-emerald-300 font-semibold underline">
+          Politique de Confidentialité
+        </button>
+      </div>
+
+      <div class="p-1.5 bg-slate-900/60 m-1 rounded-lg border border-slate-800 flex flex-col items-center justify-center min-h-[60px]">
+        <ins class="adsbygoogle"
+             style="display:block; width:100%; height:60px; text-align:center;"
+             data-ad-client="ca-pub-8178614539822210"
+             data-ad-slot="default"
+             data-ad-format="horizontal"
+             data-full-width-responsive="true"></ins>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODAL PRIVACY -->
+  <div id="privacy-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+        <h3 class="text-xs font-bold text-white">Politique de Confidentialité</h3>
+        <button onclick="closePrivacyModal()" class="text-slate-400 hover:text-white p-1 text-sm font-bold">&times;</button>
+      </div>
+      <div class="p-3 overflow-y-auto space-y-2 text-[11px] text-slate-300">
+        <p>PROWIN ZONE utilise Google AdSense pour afficher des annonces pertinentes.</p>
+      </div>
+      <div class="p-2 border-t border-slate-800 bg-slate-950 text-right">
+        <button onclick="closePrivacyModal()" class="px-3 py-1.5 bg-emerald-500 text-slate-950 font-bold text-xs rounded-lg">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APP -->
+  <script>
+    var PROXY_URL = "https://prowin-api.georgystone99.workers.dev";
+    var currentDayOffset = 0;
+    var currentSport = "football";
+    var currentCountryFilter = "Tous";
+    var currentView = "home_top6";
+    var expandedMatchIds = {};
+
+    var COUNTRIES_LIST = [
+      { id: "Tous", label: "Tous", flag: "🌍" },
+      { id: "Europe", label: "Europe", flag: "🇪🇺" },
+      { id: "Angleterre", label: "Angleterre", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+      { id: "Espagne", label: "Espagne", flag: "🇪🇸" },
+      { id: "Italie", label: "Italie", flag: "🇮🇹" },
+      { id: "Allemagne", label: "Allemagne", flag: "🇩🇪" },
+      { id: "France", label: "France", flag: "🇫🇷" },
+      { id: "USA", label: "USA", flag: "🇺🇸" }
+    ];
+
+    var MASTER_DATABASE = { football: [], basketball: [] };
+
+    function getFormattedDate(offset) {
+      var d = new Date();
+      d.setDate(d.getDate() + offset);
+      var mo = d.getMonth() + 1;
+      var da = d.getDate();
+      return d.getFullYear() + "-" + (mo < 10 ? "0" + mo : mo) + "-" + (da < 10 ? "0" + da : da);
+    }
+
+    function updateDateDisplay() {
+      var label = document.getElementById("label-date-header");
+      if (!label) return;
+      if (currentDayOffset === 0) label.textContent = "Aujourd'hui";
+      else if (currentDayOffset === -1) label.textContent = "Hier (J-1)";
+      else if (currentDayOffset === 1) label.textContent = "Demain (J+1)";
+      else {
+        var d = new Date();
+        d.setDate(d.getDate() + currentDayOffset);
+        label.textContent = d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+      }
+    }
+
+    function changeDay(delta) {
+      currentDayOffset += delta;
+      updateDateDisplay();
+      if (currentView === "all_football" || currentView === "all_basketball") {
+        fetchRealMatches(currentSport);
+      } else {
+        loadHome();
+      }
+    }
+
+    function showLoader(label) {
+      var container = document.getElementById("matches-container");
+      if (container) {
+        container.innerHTML = '<div class="p-8 text-center bg-slate-900/60 rounded-xl border border-slate-800 space-y-2"><div class="inline-block w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div><p class="text-xs text-slate-300 font-semibold">Chargement des matchs (' + label + ')...</p></div>';
+      }
+    }
+
+    function fetchSport(sport) {
+      var targetDate = getFormattedDate(currentDayOffset);
+      var url = PROXY_URL + "?sport=" + sport + "&date=" + targetDate;
+
+      return fetch(url)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          var list = (data && data.response && data.response.length) ? data.response : [];
+          if (sport === "football") {
+            MASTER_DATABASE.football = list.map(function(f) {
+              return {
+                id: "api-fb-" + f.fixture.id,
+                fxId: f.fixture.id,
+                sport: "football",
+                competition: (f.league && f.league.name) || "Football",
+                country: (f.league && f.league.country) || "Europe",
+                time: new Date(f.fixture.date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+                homeTeam: f.teams.home.name,
+                awayTeam: f.teams.away.name
+              };
+            });
+          } else {
+            MASTER_DATABASE.basketball = list.map(function(b) {
+              return {
+                id: "api-bb-" + b.id,
+                sport: "basketball",
+                competition: (b.league && b.league.name) || "Basketball",
+                country: (b.country && b.country.name) || "USA",
+                time: new Date(b.date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+                homeTeam: b.teams.home.name,
+                awayTeam: b.teams.away.name
+              };
+            });
+          }
+        })
+        .catch(function(err) {
+          console.warn("Erreur API", err);
+          MASTER_DATABASE[sport] = [];
+        });
+    }
+
+    function fetchRealMatches(sport) {
+      showLoader(sport);
+      fetchSport(sport).then(function() {
+        updateButtonsUI();
+        render();
+      });
+    }
+
+    function loadHome() {
+      showLoader("Accueil");
+      fetchSport("football").then(function() {
+        render();
+      });
+    }
+
+    function selectSport(sport) {
+      currentSport = sport;
+      currentView = sport === "football" ? "all_football" : "all_basketball";
+      expandedMatchIds = {};
+      updateButtonsUI();
+      fetchRealMatches(sport);
+    }
+
+    function switchView(view) {
+      currentView = view;
+      expandedMatchIds = {};
+      updateButtonsUI();
+      render();
+    }
+
+    function updateButtonsUI() {
+      var btnFoot = document.getElementById("btn-football");
+      var btnBasket = document.getElementById("btn-basketball");
+      var btnBack = document.getElementById("btn-back-home");
+      var secTitle = document.getElementById("section-title");
+
+      if (btnFoot) btnFoot.className = "p-2 rounded-xl border text-left bg-slate-900/90 border-slate-800";
+      if (btnBasket) btnBasket.className = "p-2 rounded-xl border text-left bg-slate-900/90 border-slate-800";
+
+      if (currentView === "home_top6") {
+        if (btnBack) btnBack.classList.add("hidden");
+        if (secTitle) secTitle.innerHTML = "Page d'Accueil : Top 10 Football";
+      } else if (currentView === "all_football") {
+        if (btnFoot) btnFoot.className = "p-2 rounded-xl border text-left bg-emerald-950/70 border-emerald-500/70 shadow-md";
+        if (btnBack) btnBack.classList.remove("hidden");
+        if (secTitle) secTitle.innerHTML = "Liste Complète Football (" + MASTER_DATABASE.football.length + ")";
+      } else if (currentView === "all_basketball") {
+        if (btnBasket) btnBasket.className = "p-2 rounded-xl border text-left bg-amber-950/70 border-amber-500/70 shadow-md";
+        if (btnBack) btnBack.classList.remove("hidden");
+        if (secTitle) secTitle.innerHTML = "Liste Complète Basketball (" + MASTER_DATABASE.basketball.length + ")";
+      }
+    }
+
+    function renderCountriesBar() {
+      var bar = document.getElementById("countries-bar");
+      if (!bar) return;
+      bar.innerHTML = COUNTRIES_LIST.map(function(c) {
+        var active = currentCountryFilter === c.id;
+        return '<button onclick="setCountryFilter(\'' + c.id + '\')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all shrink-0 ' +
+          (active ? 'bg-emerald-500 text-slate-950' : 'bg-slate-900 border border-slate-800 text-slate-400') +
+          '"><span>' + c.flag + '</span> <span>' + c.label + '</span></button>';
+      }).join("");
+    }
+
+    function setCountryFilter(id) {
+      currentCountryFilter = id;
+      renderCountriesBar();
+      render();
+    }
+
+    function render() {
+      var container = document.getElementById("matches-container");
+      if (!container) return;
+
+      var pool = (currentView === "home_top6") ? MASTER_DATABASE.football.slice(0, 10) : (currentView === "all_football" ? MASTER_DATABASE.football : MASTER_DATABASE.basketball);
+
+      if (pool.length === 0) {
+        container.innerHTML = '<div class="p-6 text-center bg-slate-900 rounded-xl border border-slate-800"><p class="text-xs text-slate-400">Aucun match disponible pour cette sélection.</p></div>';
+        return;
+      }
+
+      container.innerHTML = pool.map(function(m) {
+        return '<div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 shadow-sm">' +
+          '<div class="flex items-center justify-between text-[11px] mb-1.5">' +
+            '<span class="font-bold text-sky-400 truncate">' + m.competition + '</span>' +
+            '<span class="text-[10px] text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded">' + m.time + '</span>' +
+          '</div>' +
+          '<div class="flex items-center justify-between text-xs sm:text-sm font-bold text-white">' +
+            '<span>' + m.homeTeam + '</span>' +
+            '<span class="text-slate-500 text-[10px]">VS</span>' +
+            '<span>' + m.awayTeam + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join("");
+    }
+
+    function openPrivacyModal() { document.getElementById("privacy-modal").classList.remove("hidden"); }
+    function closePrivacyModal() { document.getElementById("privacy-modal").classList.add("hidden"); }
+
+    window.onload = function() {
+      updateDateDisplay();
+      renderCountriesBar();
+      loadHome();
+    };
+  </script>
+</body>
+</html>
