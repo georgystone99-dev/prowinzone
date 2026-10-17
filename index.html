@@ -46,7 +46,7 @@
             <h1 class="text-base font-extrabold text-white tracking-tight">PROWIN ZONE</h1>
             <span class="text-[9px] bg-emerald-950 text-emerald-400 font-bold px-1.5 py-0.5 rounded-full border border-emerald-800/60">LIVE IA</span>
           </div>
-          <span class="text-[9px] text-slate-400 font-medium">Grandes Ligues &amp; Fuseau Paris</span>
+          <span class="text-[9px] text-slate-400 font-medium">Afrique Centrale (WAT/CAT) &bull; v4.5</span>
         </div>
       </div>
 
@@ -80,9 +80,9 @@
               <span class="text-sm">&#9917;</span>
               <span class="text-xs font-extrabold text-white">Football</span>
             </div>
-            <span id="badge-count-football" class="text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums bg-slate-800 text-slate-400">Élite</span>
+            <span id="badge-count-football" class="text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums bg-slate-800 text-slate-400">Direct</span>
           </div>
-          <div class="mt-0.5 text-[10px] text-slate-400" id="subtext-football">7 Grandes Ligues &rarr;</div>
+          <div class="mt-0.5 text-[10px] text-slate-400" id="subtext-football">Liste complète &rarr;</div>
         </button>
 
         <button id="btn-basketball" onclick="selectSport('basketball')" class="p-2 rounded-xl border text-left transition-all active:scale-[0.98] bg-slate-900/90 border-slate-800">
@@ -108,7 +108,7 @@
 
       <!-- Retour Accueil -->
       <button id="btn-back-home" onclick="switchView('home_top6')" class="hidden w-full py-1.5 px-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white transition-all text-center">
-        &larr; Revenir à l'accueil (Top 10 Football d'Élite)
+        &larr; Revenir à l'accueil (Top Football d'Élite)
       </button>
     </div>
   </header>
@@ -116,9 +116,9 @@
   <!-- Titre de section -->
   <div class="max-w-md w-full mx-auto px-3 py-1 flex items-center justify-between">
     <h2 id="section-title" class="text-[11px] font-black uppercase tracking-wider text-slate-300 flex items-center gap-1">
-      Page d'Accueil : Top 10 Football d'Élite
+      Page d'Accueil : Top Football d'Élite
     </h2>
-    <span id="section-hint" class="text-[10px] text-emerald-400 font-semibold">Heure de Paris (Europe/Paris)</span>
+    <span id="section-hint" class="text-[10px] text-emerald-400 font-semibold">Heure d'Afrique Centrale (WAT/CAT)</span>
   </div>
 
   <!-- ========================================== -->
@@ -153,16 +153,20 @@
     </div>
   </div>
 
-  <!-- JAVASCRIPT COMPLET PROWIN ZONE v4.4 - OPTIMISÉ GRANDES LIGUES & FUSEAU PARIS -->
+  <!-- JAVASCRIPT COMPLET PROWIN ZONE v4.5 -->
   <script>
     var PROXY_URL = "https://prowin-api.georgystone99.workers.dev";
+    
+    // 🌍 FUSEAU HORAIRE AFRIQUE CENTRALE (WAT/CAT - Douala / Kinshasa / Brazzaville / Libreville / Yaoundé)
+    var APP_TIMEZONE = "Africa/Douala"; 
+
     var currentDayOffset = 0;
     var currentSport = "football";
     var currentCountryFilter = "Tous";
-    var currentView = "home_top6";
+    var currentView = "home_top6"; 
     var expandedMatchIds = {};
 
-    // 🎯 MODIFICATION 1 : TABLEAU OFFICIEL DES IDS DES 7 GRANDES LIGUES D'ÉLITE
+    // 1. LES 7 GRANDES LIGUES D'ÉLITE OFFICIELLES
     var ELITE_LEAGUE_IDS = [
       61,  // Ligue 1 (France)
       39,  // Premier League (Angleterre)
@@ -171,6 +175,21 @@
       78,  // Bundesliga (Allemagne)
       2,   // UEFA Champions League
       3    // UEFA Europa League
+    ];
+
+    // LIGUES MAJEURES COMPLÉMENTAIRES (Pour assurer un Top 10 riche même les jours creux)
+    var SECONDARY_TOP_IDS = [
+      848, // UEFA Conference League
+      62,  // Ligue 2
+      40,  // Championship
+      141, // La Liga 2
+      136, // Serie B
+      79,  // 2. Bundesliga
+      88,  // Eredivisie
+      94,  // Liga Portugal
+      307, // Saudi Pro League
+      203, // Süper Lig
+      253  // MLS
     ];
 
     var COUNTRIES_LIST = [
@@ -185,7 +204,7 @@
     ];
 
     var PRIORITY_LEAGUES = [
-      "champions league", "europa league", "premier league", "la liga", 
+      "champions league", "europa league", "conference league", "premier league", "la liga", 
       "serie a", "bundesliga", "ligue 1", "eredivisie", "super lig", 
       "saudi pro league", "championship", "nba", "euroleague"
     ];
@@ -198,42 +217,100 @@
       return 99;
     }
 
-    // Algorithme dynamique de calcul des pronostics
+    // =========================================================================
+    // ALGORITHME DE PRONOSTIC 100% COHÉRENT & LOGIQUE
+    // Élimine toute contradiction entre Score Exact, 1X2, Over/Under et GG
+    // =========================================================================
     function computeAIPrediction(match) {
-      var isFoot = match.sport === "football";
       var idNum = parseInt(String(match.id).replace(/\D/g, '')) || 1234;
-      
-      var hStrength = 0.5 + ((idNum % 40) / 100);
-      var confidence = Math.min(94, Math.max(68, Math.round(65 + (idNum % 25))));
-
-      var pronoPrincipal = "";
-      var totalOverUnder = (idNum % 2 === 0) ? "Plus de 2.5 Buts (Over)" : "Moins de 2.5 Buts (Under)";
-      var bttsGG = (idNum % 3 === 0) ? "Oui (Les 2 équipes marquent)" : "Non (Clean sheet probable)";
-      var exactScore = (idNum % 3) + " - " + ((idNum >> 2) % 3);
+      var isFoot = match.sport === "football";
 
       if (isFoot) {
-        if (hStrength >= 0.7) {
-          pronoPrincipal = "Victoire " + match.homeTeam + " ou Nul";
-        } else {
-          pronoPrincipal = "Les 2 équipes marquent (GG)";
-        }
-      } else {
-        pronoPrincipal = match.homeTeam + " (-4.5 points)";
-        totalOverUnder = "Plus de 221.5 Points";
-        bttsGG = "Écart : 6 à 10 points";
-        exactScore = "112 - 105";
-      }
+        var scenario = idNum % 10;
+        var hGoals = 0;
+        var aGoals = 0;
+        var pronoPrincipal = "";
+        var confidence = Math.min(94, Math.max(68, 68 + (idNum % 24)));
 
-      return {
-        confidence: confidence,
-        pronoPrincipal: pronoPrincipal,
-        totalOverUnder: totalOverUnder,
-        bttsGG: bttsGG,
-        exactScore: exactScore
-      };
+        if (scenario <= 3) {
+          // Scénario A : Domicile gagne
+          if (scenario === 0) { hGoals = 2; aGoals = 1; }
+          else if (scenario === 1) { hGoals = 1; aGoals = 0; }
+          else if (scenario === 2) { hGoals = 2; aGoals = 0; }
+          else { hGoals = 3; aGoals = 1; }
+
+          pronoPrincipal = "Victoire " + match.homeTeam + " ou Nul";
+        } else if (scenario <= 5) {
+          // Scénario B : Nul
+          if (scenario === 4) { hGoals = 1; aGoals = 1; }
+          else { hGoals = 0; aGoals = 0; }
+
+          pronoPrincipal = hGoals > 0 ? "Match Nul ou Les 2 marquent" : "Double Chance & Moins de 2.5 Buts";
+        } else {
+          // Scénario C : Extérieur gagne (Ex: Chelsea contre Everton 1 - 2)
+          if (scenario === 6) { hGoals = 1; aGoals = 2; }
+          else if (scenario === 7) { hGoals = 0; aGoals = 2; }
+          else if (scenario === 8) { hGoals = 0; aGoals = 1; }
+          else { hGoals = 1; aGoals = 3; }
+
+          // ✅ RÉSOUD LA CONTRADICTION : Si l'extérieur gagne, prono = Extérieur ou Nul !
+          pronoPrincipal = "Victoire " + match.awayTeam + " ou Nul";
+        }
+
+        var exactScore = hGoals + " - " + aGoals;
+        var totalGoals = hGoals + aGoals;
+
+        // ✅ COHÉRENCE OVER/UNDER
+        var totalOverUnder = totalGoals >= 3 ? "Plus de 2.5 Buts (Over)" : "Moins de 2.5 Buts (Under)";
+        
+        // ✅ COHÉRENCE GG (LES 2 ÉQUIPES MARQUENT)
+        var bttsGG = (hGoals > 0 && aGoals > 0)
+          ? "Oui (Les 2 équipes marquent)"
+          : "Non (Clean sheet probable)";
+
+        return {
+          confidence: confidence,
+          pronoPrincipal: pronoPrincipal,
+          totalOverUnder: totalOverUnder,
+          bttsGG: bttsGG,
+          exactScore: exactScore
+        };
+      } 
+      else {
+        // BASKETBALL : PRONOSTICS DYNAMIQUES ET DIFFÉRENTS PAR MATCH
+        var bHomeScore = 101 + (idNum % 24);
+        var bAwayScore = 97 + ((idNum * 3) % 25);
+        if (bHomeScore === bAwayScore) bHomeScore += 5;
+
+        var bWinner = bHomeScore > bAwayScore ? match.homeTeam : match.awayTeam;
+        var bMargin = Math.abs(bHomeScore - bAwayScore);
+        var bTotalPoints = bHomeScore + bAwayScore;
+        var bConf = Math.min(92, Math.max(70, 71 + (idNum % 20)));
+
+        var bProno = bMargin <= 5 
+          ? bWinner + " gagne (Match serré)" 
+          : (bMargin <= 10 ? bWinner + " (-4.5 points)" : bWinner + " (-8.5 points)");
+
+        var bLine = 214.5 + ((idNum % 8) * 2);
+        var bOver = bTotalPoints > bLine ? "Plus de " + bLine + " Pts" : "Moins de " + bLine + " Pts";
+        var bEcart = "Écart : " + Math.max(2, bMargin - 2) + " à " + (bMargin + 4) + " pts";
+        var bScoreStr = bHomeScore + " - " + bAwayScore;
+
+        return {
+          confidence: bConf,
+          pronoPrincipal: bProno,
+          totalOverUnder: bOver,
+          bttsGG: bEcart,
+          exactScore: bScoreStr
+        };
+      }
     }
 
-    var MASTER_DATABASE = { football: [], basketball: [] };
+    var MASTER_DATABASE = { 
+      football: [],          // Pour "Liste complète Football"
+      football_elite: [],    // Pour "Accueil : Top Élite"
+      basketball: [] 
+    };
 
     function getFormattedDate(offset) {
       var d = new Date();
@@ -263,11 +340,9 @@
       }
       currentDayOffset = newOffset;
       updateDateDisplay();
-      if (currentView === "all_football" || currentView === "all_basketball") {
-        fetchRealMatches(currentSport);
-      } else {
-        loadHome();
-      }
+      fetchSport(currentSport).then(function() {
+        render();
+      });
     }
 
     function getCountryFlag(countryName) {
@@ -281,6 +356,7 @@
       if (c.indexOf("saudi") !== -1) return "🇸🇦";
       if (c.indexOf("netherlands") !== -1) return "🇳🇱";
       if (c.indexOf("turkey") !== -1) return "🇹🇷";
+      if (c.indexOf("usa") !== -1) return "🇺🇸";
       return "🇪🇺";
     }
 
@@ -291,40 +367,31 @@
       }
     }
 
+    // =========================================================================
+    // RÉCUPÉRATION AVEC FUSEAU AFRIQUE CENTRALE (Africa/Douala)
+    // =========================================================================
     function fetchSport(sport) {
       var targetDate = getFormattedDate(currentDayOffset);
       
-      // 🎯 MODIFICATION 2 : AJOUT DU PARAMÈTRE &timezone=Europe/Paris
-      var url = PROXY_URL + "?sport=" + sport + "&date=" + targetDate + "&timezone=Europe/Paris";
+      // ✅ AJOUT DU FUSEAU HORAIRE AFRIQUE CENTRALE
+      var url = PROXY_URL + "?sport=" + sport + "&date=" + targetDate + "&timezone=" + encodeURIComponent(APP_TIMEZONE);
 
       return fetch(url)
         .then(function(res) { return res.json(); })
         .then(function(data) {
           var list = (data && data.response && data.response.length) ? data.response : [];
-          
+
           if (sport === "football") {
-            // 🎯 MODIFICATION 3 : FILTRAGE FORCÉ SUR LES 7 GRANDES LIGUES D'ÉLITE
-            var eliteMatches = list.filter(function(f) {
-              return f.league && ELITE_LEAGUE_IDS.indexOf(f.league.id) !== -1;
-            });
-
-            // Si des matchs d'élite existent, on ne garde qu'eux !
-            var finalList = eliteMatches.length > 0 ? eliteMatches : list;
-
-            finalList.sort(function(a, b) { 
-              return leagueRank(a.league && a.league.name) - leagueRank(b.league && b.league.name); 
-            });
-
-            MASTER_DATABASE.football = finalList.slice(0, 45).map(function(f) {
+            // A. LISTE COMPLÈTE FOOTBALL (Tous les matchs disponibles)
+            MASTER_DATABASE.football = list.map(function(f) {
               var isFinished = f.fixture && (f.fixture.status.short === "FT" || f.fixture.status.short === "AET");
-              
-              // 🎯 MODIFICATION 4 : FORCE L'HEURE AU FUSEAU EUROPE/PARIS
               var matchTime = "20:00";
               try {
+                // ✅ CONVERSION À L'HEURE D'AFRIQUE CENTRALE
                 matchTime = new Date(f.fixture.date).toLocaleTimeString("fr-FR", { 
                   hour: "2-digit", 
-                  minute: "2-digit",
-                  timeZone: "Europe/Paris"
+                  minute: "2-digit", 
+                  timeZone: APP_TIMEZONE 
                 });
               } catch(e) {
                 matchTime = new Date(f.fixture.date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -333,6 +400,7 @@
               return {
                 id: "api-fb-" + f.fixture.id,
                 sport: "football",
+                leagueId: f.league ? f.league.id : 0,
                 competition: (f.league && f.league.name) || "Football",
                 country: (f.league && f.league.country) || "Europe",
                 flag: getCountryFlag(f.league && f.league.country),
@@ -344,17 +412,45 @@
                 scoreAway: isFinished && f.goals ? f.goals.away : null
               };
             });
-          } else {
-            list.sort(function(a, b) { return leagueRank(a.league && a.league.name) - leagueRank(b.league && b.league.name); });
 
-            MASTER_DATABASE.basketball = list.slice(0, 18).map(function(b) {
+            // B. SÉLECTION TOP ÉLITE POUR L'ACCUEIL
+            var eliteMatches = MASTER_DATABASE.football.filter(function(m) {
+              return ELITE_LEAGUE_IDS.indexOf(m.leagueId) !== -1;
+            });
+
+            // Si moins de 5 matchs d'élite aujourd'hui, on complète avec les compétitions majeures
+            if (eliteMatches.length < 5) {
+              var secondaryMatches = MASTER_DATABASE.football.filter(function(m) {
+                return SECONDARY_TOP_IDS.indexOf(m.leagueId) !== -1;
+              });
+              eliteMatches = eliteMatches.concat(secondaryMatches);
+            }
+
+            // Si toujours faible, on prend les meilleurs matchs par notoriété
+            if (eliteMatches.length < 5) {
+              var sortedAll = MASTER_DATABASE.football.slice().sort(function(a, b) {
+                return leagueRank(a.competition) - leagueRank(b.competition);
+              });
+              eliteMatches = sortedAll.slice(0, 15);
+            }
+
+            MASTER_DATABASE.football_elite = eliteMatches;
+          } 
+          else {
+            // BASKETBALL
+            list.sort(function(a, b) { 
+              return leagueRank(a.league && a.league.name) - leagueRank(b.league && b.league.name); 
+            });
+
+            MASTER_DATABASE.basketball = list.slice(0, 30).map(function(b) {
               var isFinished = b.status && (b.status.short === "FT" || b.status.short === "AOT");
               var bTime = "20:00";
               try {
+                // ✅ HEURE AFRIQUE CENTRALE POUR LE BASKET
                 bTime = new Date(b.date).toLocaleTimeString("fr-FR", { 
                   hour: "2-digit", 
-                  minute: "2-digit",
-                  timeZone: "Europe/Paris"
+                  minute: "2-digit", 
+                  timeZone: APP_TIMEZONE 
                 });
               } catch(e) {
                 bTime = new Date(b.date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -378,7 +474,6 @@
         })
         .catch(function(err) {
           console.warn("Erreur API", err);
-          MASTER_DATABASE[sport] = [];
         });
     }
 
@@ -402,7 +497,14 @@
       currentView = sport === "football" ? "all_football" : "all_basketball";
       expandedMatchIds = {};
       updateButtonsUI();
-      fetchRealMatches(sport);
+
+      // Affichage immédiat à partir du cache local
+      var currentPool = (sport === "football") ? MASTER_DATABASE.football : MASTER_DATABASE.basketball;
+      if (currentPool && currentPool.length > 0) {
+        render();
+      } else {
+        fetchRealMatches(sport);
+      }
     }
 
     function switchView(view) {
@@ -423,15 +525,15 @@
 
       if (currentView === "home_top6") {
         if (btnBack) btnBack.classList.add("hidden");
-        if (secTitle) secTitle.innerHTML = "Page d'Accueil : Top 10 Football d'Élite";
+        if (secTitle) secTitle.innerHTML = "Page d'Accueil : Top Football d'Élite (" + MASTER_DATABASE.football_elite.length + ")";
       } else if (currentView === "all_football") {
         if (btnFoot) btnFoot.className = "p-2 rounded-xl border text-left bg-emerald-950/70 border-emerald-500/70 shadow-md";
         if (btnBack) btnBack.classList.remove("hidden");
-        if (secTitle) secTitle.innerHTML = "Liste Complète Football (" + MASTER_DATABASE.football.length + ")";
+        if (secTitle) secTitle.innerHTML = "Liste Complète Football (" + MASTER_DATABASE.football.length + " Matchs)";
       } else if (currentView === "all_basketball") {
         if (btnBasket) btnBasket.className = "p-2 rounded-xl border text-left bg-amber-950/70 border-amber-500/70 shadow-md";
         if (btnBack) btnBack.classList.remove("hidden");
-        if (secTitle) secTitle.innerHTML = "Liste Sûre Basketball (" + MASTER_DATABASE.basketball.length + ")";
+        if (secTitle) secTitle.innerHTML = "Liste Sûre Basketball (" + MASTER_DATABASE.basketball.length + " Matchs)";
       }
     }
 
@@ -447,7 +549,7 @@
       if (!bar) return;
       bar.innerHTML = COUNTRIES_LIST.map(function(c) {
         var active = currentCountryFilter === c.id;
-        return '<button onclick="setCountryFilter(\'' + c.id + '\')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all shrink-0 ' +
+        return '<button onclick="setCountryFilter('' + c.id + '')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all shrink-0 ' +
           (active ? 'bg-emerald-500 text-slate-950' : 'bg-slate-900 border border-slate-800 text-slate-400') +
           '"><span>' + c.flag + '</span> <span>' + c.label + '</span></button>';
       }).join("");
@@ -478,7 +580,14 @@
       var container = document.getElementById("matches-container");
       if (!container) return;
 
-      var pool = (currentView === "home_top6") ? MASTER_DATABASE.football.slice(0, 10) : (currentView === "all_football" ? MASTER_DATABASE.football : MASTER_DATABASE.basketball);
+      var pool = [];
+      if (currentView === "home_top6") {
+        pool = MASTER_DATABASE.football_elite;
+      } else if (currentView === "all_football") {
+        pool = MASTER_DATABASE.football;
+      } else {
+        pool = MASTER_DATABASE.basketball;
+      }
 
       if (currentCountryFilter !== "Tous") {
         pool = pool.filter(function(m) {
@@ -493,8 +602,8 @@
         });
       }
 
-      if (pool.length === 0) {
-        container.innerHTML = '<div class="p-6 text-center bg-slate-900 rounded-xl border border-slate-800"><p class="text-xs text-slate-400">Aucun match disponible pour cette date ou ce filtre.</p></div>';
+      if (!pool || pool.length === 0) {
+        container.innerHTML = '<div class="p-6 text-center bg-slate-900 rounded-xl border border-slate-800"><p class="text-xs text-slate-400">Aucun match disponible pour cette sélection ou ce filtre de pays.</p></div>';
         return;
       }
 
@@ -523,13 +632,13 @@
 
         var detailBox = '<div class="mt-2 pt-2 border-t border-slate-800 space-y-2 text-[11px]">' +
           '<div class="grid grid-cols-3 gap-1.5">' +
-            '<div class="bg-slate-950 p-2 rounded-lg border border-slate-800"><span class="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">Total Buts</span><span class="text-[11px] font-extrabold text-sky-400 leading-tight block">' + esc(pred.totalOverUnder) + '</span></div>' +
-            '<div class="bg-slate-950 p-2 rounded-lg border border-slate-800"><span class="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">2 Équipes Marquent</span><span class="text-[11px] font-extrabold text-amber-400 leading-tight block">' + esc(pred.bttsGG) + '</span></div>' +
+            '<div class="bg-slate-950 p-2 rounded-lg border border-slate-800"><span class="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">Total Buts / Pts</span><span class="text-[11px] font-extrabold text-sky-400 leading-tight block">' + esc(pred.totalOverUnder) + '</span></div>' +
+            '<div class="bg-slate-950 p-2 rounded-lg border border-slate-800"><span class="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">2 Équipes / Écart</span><span class="text-[11px] font-extrabold text-amber-400 leading-tight block">' + esc(pred.bttsGG) + '</span></div>' +
             '<div class="bg-slate-950 p-2 rounded-lg border border-slate-800"><span class="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">Score Exact</span><span class="text-xs font-black text-pink-400 font-mono tracking-wider block">' + esc(pred.exactScore) + '</span></div>' +
           '</div>' +
         '</div>';
 
-        html += '<div onclick="toggleMatch(\'' + match.id + '\')" class="bg-slate-900/90 hover:bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm transition-all cursor-pointer mb-2.5">' +
+        html += '<div onclick="toggleMatch('' + match.id + '')" class="bg-slate-900/90 hover:bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm transition-all cursor-pointer mb-2.5">' +
           '<div class="px-3 py-1.5 bg-slate-950/70 border-b border-slate-800/80 flex items-center justify-between text-[11px]">' +
             '<div class="flex items-center gap-1.5 min-w-0"><span class="text-xs">' + match.flag + '</span><span class="font-bold text-sky-400 truncate">' + match.competition + '</span><span class="text-slate-600">&middot;</span><span class="text-[10px] text-slate-400 uppercase">' + match.country + '</span></div>' +
             '<div class="flex items-center gap-1.5 shrink-0"><span class="text-[10px] font-semibold text-slate-300 bg-slate-800/80 px-1.5 py-0.5 rounded">' + match.time + '</span><span class="text-slate-400 text-xs">' + (isExpanded ? "&#9650;" : "&#9660;") + '</span></div>' +
@@ -580,4 +689,4 @@
     };
   </script>
 </body>
-  </html>
+    </html>
