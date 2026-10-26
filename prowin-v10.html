@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PROWIN ZONE - Pronostics Sportifs IA</title>
+  
+  <!-- ======================================================= -->
+  <!-- SCRIPT OFFICIEL GOOGLE ADSENSE (ÉDITEUR: pub-8178614539822210) -->
+  <!-- ======================================================= -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8178614539822210" crossorigin="anonymous"></script>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#10b981', 600: '#059669' }
+          }
+        }
+      }
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between antialiased selection:bg-emerald-500 selection:text-black">
+
+  <!-- ========================================== -->
+  <!-- 1. EN-TÊTE COMPACT PROWIN ZONE + CALENDRIER -->
+  <!-- ========================================== -->
+  <header class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md border-b border-slate-800/80 px-3 py-2">
+    <div class="max-w-md mx-auto flex items-center justify-between gap-2">
+      <!-- Logo et Titre -->
+      <div class="flex items-center gap-2 cursor-pointer" onclick="switchView('home_top6')">
+        <div class="w-8 h-8 rounded-lg bg-emerald-950 border border-emerald-500/40 flex items-center justify-center text-xs font-black text-emerald-400 shadow-sm">
+          PW
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-base font-extrabold text-white tracking-tight">PROWIN ZONE</h1>
+            <span class="text-[9px] bg-emerald-950 text-emerald-400 font-bold px-1.5 py-0.5 rounded-full border border-emerald-800/60">LIVE IA</span>
+          </div>
+          <span class="text-[9px] text-slate-400 font-medium">Afrique Centrale (WAT/CAT) &bull; v6.0</span>
+        </div>
+      </div>
+
+      <!-- Navigation Calendrier J-1 / J / J+1 -->
+      <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-lg p-0.5 shadow-inner">
+        <button onclick="changeDay(-1)" title="Jour précédent" class="w-6 h-6 flex items-center justify-center rounded text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 text-xs font-bold">
+          &larr;
+        </button>
+        <span id="label-date-header" class="text-[10px] font-bold text-slate-200 px-1 capitalize min-w-[75px] text-center">
+          Aujourd'hui
+        </span>
+        <button onclick="changeDay(1)" title="Jour suivant" class="w-6 h-6 flex items-center justify-center rounded text-slate-300 hover:text-white hover:bg-slate-800 active:scale-95 text-xs font-bold">
+          &rarr;
+        </button>
+      </div>
+
+      <!-- Actualisation -->
+      <button onclick="refreshData()" title="Recharger les matchs" class="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white active:scale-95 transition-all">
+        <svg id="icon-refresh" class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+      </button>
+    </div>
+    <!-- Les 2 pages : toujours visibles (en-tête collant) -->
+    <div class="max-w-md mx-auto grid grid-cols-2 gap-2 mt-2">
+      <button id="btn-home" onclick="switchView('home_top6')" class="p-1.5 rounded-xl border text-left transition-all active:scale-[0.98] bg-emerald-950/70 border-emerald-500/70 shadow-md">
+        <div class="flex items-center justify-between gap-1">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="text-sm">&#127942;</span>
+            <span class="text-[11px] font-extrabold text-white truncate">Top 10 Foot Élite</span>
+          </div>
+          <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 shrink-0">Élite</span>
+        </div>
+      </button>
+      <button id="btn-football" onclick="selectSport('football')" class="p-1.5 rounded-xl border text-left transition-all active:scale-[0.98] bg-slate-900/90 border-slate-800">
+        <div class="flex items-center justify-between gap-1">
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="text-sm">&#9917;</span>
+            <span class="text-[11px] font-extrabold text-white truncate">Football</span>
+          </div>
+          <span id="badge-count-football" class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 shrink-0">Direct</span>
+        </div>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 2. FILTRES PAR PAYS -->
+  <!-- ========================================== -->
+  <section class="max-w-md w-full mx-auto px-3 pt-2 pb-1 space-y-1.5">
+    <!-- Barre de Filtres horizontaux par Pays -->
+    <div class="pt-1">
+      <div class="text-[10px] text-slate-400 font-semibold mb-1 flex items-center justify-between">
+        <span>Filtre par pays / continent :</span>
+        <span id="active-country-label" class="text-emerald-400">Tous les pays</span>
+      </div>
+      <div id="countries-bar" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+        <!-- Rendu dynamique -->
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Titre de section -->
+  <div class="max-w-md w-full mx-auto px-3 py-1 flex items-center justify-between">
+    <h2 id="section-title" class="text-[11px] font-black uppercase tracking-wider text-slate-300 flex items-center gap-1">
+      Top 10 Foot Élite
+    </h2>
+    <span id="section-hint" class="text-[10px] text-slate-400">Sélection élite</span>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. ZONE CENTRALE : MATCHS & PUBS ADSENSE -->
+  <!-- ========================================== -->
+  <main class="max-w-md w-full mx-auto flex-1 px-3 py-1 space-y-2.5 overflow-y-auto" id="matches-container">
+    <!-- Rendu dynamique -->
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 4. FOOTER AVEC ANNONCE GOOGLE ADSENSE FIXE -->
+  <!-- ========================================== -->
+  <footer class="w-full bg-slate-950 border-t border-slate-800 shadow-2xl z-20 mt-2">
+    <div class="max-w-md mx-auto">
+      <div class="bg-slate-900/90 px-3 py-1 border-b border-slate-800 flex items-center justify-between text-[9px] text-slate-400">
+        <div class="flex items-center gap-1.5">
+          <span class="bg-amber-400 text-slate-950 font-black px-1 rounded-sm text-[8px] uppercase">Annonce</span>
+          <span class="font-semibold text-slate-300">Google AdSense</span>
+          <span>&middot; Bannière Adaptative</span>
+        </div>
+        <button onclick="openPrivacyModal()" class="text-emerald-400 hover:text-emerald-300 font-semibold underline">
+          Politique de Confidentialité
+        </button>
+      </div>
+
+      <!-- BLOC PUBLICITAIRE RÉEL GOOGLE ADSENSE (BAS D'ÉCRAN) -->
+      <div class="p-1.5 bg-slate-900/60 m-1 rounded-lg border border-slate-800 flex flex-col items-center justify-center min-h-[60px]">
+        <ins class="adsbygoogle"
+             style="display:block; width:100%; height:60px; text-align:center;"
+             data-ad-client="ca-pub-8178614539822210"
+             data-ad-slot="default"
+             data-ad-format="horizontal"
+             data-full-width-responsive="true"></ins>
+        <span class="text-[8px] text-slate-600 mt-0.5 font-mono">ID Éditeur : ca-pub-8178614539822210</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================== -->
+  <!-- MODAL : POLITIQUE DE CONFIDENTIALITÉ (RGPD) -->
+  <!-- ========================================== -->
+  <div id="privacy-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="p-3 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+        <h3 class="text-xs font-bold text-white flex items-center gap-1.5">
+          <span>Politique de Confidentialité &amp; Google AdSense</span>
+        </h3>
+        <button onclick="closePrivacyModal()" class="text-slate-400 hover:text-white p-1 text-sm font-bold">&times;</button>
+      </div>
+
+      <div class="p-3 overflow-y-auto space-y-2.5 text-[11px] text-slate-300 leading-relaxed">
+        <p class="font-semibold text-emerald-400">Application : PROWIN ZONE</p>
+        <p>
+          Cette Politique de Confidentialité régit la collecte, l'utilisation et la conservation des données pour l'application PROWIN ZONE, conformément aux exigences de Google AdSense et au Règlement Général sur la Protection des Données (RGPD).
+        </p>
+
+        <h4 class="font-bold text-white text-[11px] pt-1">1. Publicités Google AdSense &amp; Cookies</h4>
+        <p class="text-slate-400 text-[10px]">
+          Ce site diffuse des annonces fournies par Google AdSense (Code Éditeur : ca-pub-8178614539822210). Des cookies tiers peuvent être utilisés pour diffuser des annonces pertinentes basées sur vos visites antérieures.
+        </p>
+
+        <h4 class="font-bold text-white text-[11px] pt-1">2. Données collectées</h4>
+        <p class="text-slate-400 text-[10px]">
+          PROWIN ZONE ne collecte aucune donnée nominative. Les seules informations traitées concernent les métriques techniques nécessaires à la navigation et à l'affichage des annonces.
+        </p>
+
+        <h4 class="font-bold text-white text-[11px] pt-1">3. Données sportives &amp; Fournisseurs</h4>
+        <p class="text-slate-400 text-[10px]">
+          Les scores et calendriers proviennent de l'API officielle API-Sports. Les calculs statistiques et prédictions sont générés par notre modèle algorithmique interne à titre récréatif.
+        </p>
+
+        <h4 class="font-bold text-white text-[11px] pt-1">4. Désactivation des annonces</h4>
+        <p class="text-slate-400 text-[10px]">
+          Vous pouvez désactiver la personnalisation des annonces Google en visitant : <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" class="text-emerald-400 underline">adssettings.google.com</a>.
+        </p>
+      </div>
+
+      <div class="p-2 border-t border-slate-800 bg-slate-950 text-right">
+        <button onclick="closePrivacyModal()" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-lg">
+          J'ai compris
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 5. JAVASCRIPT COMPLET SANS ERREURS LINTER -->
+  <!-- ========================================== -->
+  <script>
+    /* jshint esversion: 8, browser: true, devel: true */
+    /* global adsbygoogle */
+
+    // Adresse de votre proxy sécurisé (Cloudflare Worker) : la clé API n'est plus dans ce fichier
+    var PROXY_URL = "https://prowin-api.georgystone99.workers.dev";
+    // Code Éditeur Google AdSense officiel
+    var ADSENSE_PUB_ID = "ca-pub-8178614539822210";
+
+    var currentDayOffset = 0;
+    var currentSport = "football";
+    var currentCountryFilter = "Tous";
+    var currentView = "home_top6";
+    var expandedMatchIds = {};
+
+    var COUNTRIES_LIST = [
+      { id: "Tous", label: "Tous", flag: "🌍" },
+      { id: "Europe", label: "Europe", flag: "🇪🇺" },
+      { id: "Angleterre", label: "Angleterre", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+      { id: "Espagne", label: "Espagne", flag: "🇪🇸" },
+      { id: "Italie", label: "Italie", flag: "🇮🇹" },
+      { id: "Allemagne", label: "Allemagne", flag: "🇩🇪" },
+      { id: "France", label: "France", flag: "🇫🇷" },
+      { id: "USA", label: "USA", flag: "🇺🇸" },
+      { id: "AmeriqueSud", label: "Amér. Sud", flag: "🌎" }
+    ];
+
+    // Algorithme d'analyse IA mathématique fiable
+    function computeAIPrediction(match) {
+      var isFoot = match.sport === "football";
+      var h2hHomeWins = match.h2hHomeWins || 3;
+      var h2hDraws = match.h2hDraws || 2;
+      var h2hAwayWins = 6 - h2hHomeWins - h2hDraws;
+      var homeFormPts = match.homeFormPts || 14;
+      var awayFormPts = match.awayFormPts || 10;
+      var homeStrength = match.homeHomeStrength || 0.75;
+      var awayStrength = match.awayAwayStrength || 0.45;
+
+      var rawIndex = ((h2hHomeWins * 3 + h2hDraws) / 18 * 0.3) + (homeFormPts / 18 * 0.4) + ((homeStrength - awayStrength) * 0.3);
+      var confidence = Math.min(94, Math.max(63, Math.round(62 + Math.abs(rawIndex) * 32)));
+
+      var pronoPrincipal = "";
+      var coteConseillee = 1.65;
+      var totalOverUnder = "";
+      var bttsGG = "";
+      var exactScore = "";
+
+      if (isFoot) {
+        if (h2hHomeWins >= 3 && homeStrength >= 0.7) {
+          pronoPrincipal = "Victoire " + match.homeTeam + " ou Nul & +1.5 Buts";
+          coteConseillee = 1.68;
+          totalOverUnder = "Plus de 2.5 Buts (Over)";
+          bttsGG = "Oui (Les 2 équipes marquent)";
+          exactScore = "2 - 1";
+        } else if (rawIndex > 0.4) {
+          pronoPrincipal = "Victoire " + match.homeTeam;
+          coteConseillee = Number((match.odds && match.odds.h) ? match.odds.h : 1.85);
+          totalOverUnder = "Plus de 1.5 Buts";
+          bttsGG = "Non (Clean sheet probable)";
+          exactScore = "2 - 0";
+        } else {
+          pronoPrincipal = "Les 2 équipes marquent (GG) ou +2.5 Buts";
+          coteConseillee = 1.74;
+          totalOverUnder = "Plus de 2.5 Buts (Over)";
+          bttsGG = "Oui (Les 2 équipes marquent)";
+          exactScore = "1 - 1";
+        }
+      } else {
+        if (homeStrength > 0.7) {
+          pronoPrincipal = match.homeTeam + " (-4.5 points)";
+          coteConseillee = 1.82;
+          totalOverUnder = "Plus de 221.5 Points";
+          bttsGG = "Écart : 6 à 10 points";
+          exactScore = "114 - 107";
+        } else {
+          pronoPrincipal = "Plus de 223.5 Points au total";
+          coteConseillee = 1.88;
+          totalOverUnder = "Plus de 223.5 Points";
+          bttsGG = "Écart : 1 à 5 points";
+          exactScore = "112 - 110";
+        }
+      }
+
+      return {
+        confidence: confidence,
+        pronoPrincipal: pronoPrincipal,
+        coteConseillee: Number(coteConseillee.toFixed(2)),
+        totalOverUnder: totalOverUnder,
+        bttsGG: bttsGG,
+        exactScore: exactScore,
+        stats: {
+          h2h: h2hHomeWins + "V - " + h2hDraws + "N - " + h2hAwayWins + "D",
+          homeForm: homeFormPts + "/18 pts",
+          awayForm: awayFormPts + "/18 pts",
+          homeDominance: Math.round(homeStrength * 100) + "% victoire domicile"
+        }
+      };
+    }
+
+    var MASTER_DATABASE = { football: [] };
+
+    function getFormattedDate(offset) {
+      var d = new Date();
+      d.setDate(d.getDate() + offset);
+      var mo = d.getMonth() + 1;
+      var da = d.getDate();
+      return d.getFullYear() + "-" + (mo < 10 ? "0" + mo : mo) + "-" + (da < 10 ? "0" + da : da);
+    }
+
+    function updateDateDisplay() {
+      var label = document.getElementById("label-date-header");
+      if (!label) { return; }
+      if (currentDayOffset === 0) {
+        label.textContent = "Aujourd'hui";
+      } else if (currentDayOffset === -1) {
+        label.textContent = "Hier (J-1)";
+      } else if (currentDayOffset === 1) {
+        label.textContent = "Demain (J+1)";
+      } else {
+        var d = new Date();
+        d.setDate(d.getDate() + currentDayOffset);
+        label.textContent = d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+      }
+    }
+
+    function changeDay(delta) {
+      var nextOffset = currentDayOffset + delta;
+      if (nextOffset < -6 || nextOffset > 1) { return; }
+      currentDayOffset = nextOffset;
+      updateDateDisplay();
+      if (currentView === "all_football") {
+        fetchRealMatches(currentSport);
+      } else {
+        loadHome();
+      }
+    }
+
+    var PRIORITY_LEAGUES = ["Champions League", "Europa League", "Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1"];
+
+    function leagueRank(name) {
+      var n = name || "";
+      for (var i = 0; i < PRIORITY_LEAGUES.length; i++) {
+        if (n.indexOf(PRIORITY_LEAGUES[i]) !== -1) { return i; }
+      }
+      return 99;
+    }
+
+    function showLoader(label) {
+      var container = document.getElementById("matches-container");
+      if (container) {
+        container.innerHTML = '<div class="p-8 text-center bg-slate-900/60 rounded-xl border border-slate-800 space-y-2"><div class="inline-block w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></div><p class="text-xs text-slate-300 font-semibold">Chargement des matchs (' + label + ')...</p></div>';
+      }
+    }
+
+    // ===== Algorithme de sélection du football =====
+    // Textes comparés en minuscules, sans accents, tirets remplacés par des espaces
+    function norm(s) {
+      return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/-/g, " ").replace(/\s+/g, " ").trim();
+    }
+
+    // Groupe 1 : matchs de 00 h à midi (heure du téléphone)  [pays, compétition]
+    var EARLY_LEAGUES = [
+      [/^(usa|united states)$/, /^(major league soccer|mls)$/],
+      [/^brazil$/, /^serie a$/],
+      [/^argentina$/, /^liga profesional/],
+      [/^mexico$/, /^liga mx$/],
+      [/^japan$/, /^j1 league$/],
+      [/korea/, /^k league 1$/],
+      [/^australia$/, /^a league$/]
+    ];
+
+    // Groupe 2 : matchs d'élite de 12 h à 21 h
+    var ELITE_LEAGUES = [
+      [/^england$/, /^premier league$/],
+      [/^italy$/, /^serie a$/],
+      [/^germany$/, /^bundesliga$/],
+      [/^spain$/, /^la liga$/],
+      [/^france$/, /^ligue 1$/],
+      [/^netherlands$/, /^eredivisie$/],
+      [/^saudi/, /^(saudi )?pro league$/],
+      [/^turkey$/, /^super lig$/],
+      [/^austria$/, /^bundesliga$/],
+      [/^norway$/, /^eliteserien$/],
+      [/^switzerland$/, /^super league$/],
+      [/^sweden$/, /^allsvenskan$/],
+      [/^czech/, /^(czech liga|1\.? liga|fortuna liga|chance liga)/],
+      [/^estonia$/, /^(meistriliiga|premium li[ig]a)$/],
+      [/^england$/, /^championship$/],
+      [/^morocco$/, /^botola pro/],
+      [/^south africa$/, /^(premier soccer league|premiership|psl)$/]
+    ];
+
+    // Groupe 3 : matchs de clôture de la journée (à partir de 21 h) en Amérique du Sud
+    var SOUTH_AMERICA_RE = /^(brazil|argentina|colombia|paraguay|uruguay|chile|peru|ecuador|bolivia|venezuela)$/;
+
+    // Compétitions internationales : priorité absolue, à n'importe quelle heure
+    var INTL_RULES = [
+      [/^uefa champions league$/, 0],
+      [/^uefa europa league$/, 1],
+      [/^uefa (europa )?conference league$/, 2],
+      [/world cup/, 3],
+      [/libertadores/, 3],
+      [/euro championship|european championship|uefa euro|copa america|africa cup|afcon|asian cup|gold cup|confederations|nations league/, 4],
+      [/sudamericana|caf champions league|afc champions league|concacaf champions/, 5],
+      [/qualification|qualifiers/, 6],
+      [/olympic/, 7],
+      [/friendlies/, 8]
+    ];
+    var INTL_COUNTRY_RE = /^(world|europe|asia|africa|south america|north america|oceania)/;
+
+    // Matchs féminins, jeunes, réserves : toujours en dernier
+    var EXCLUDE_NAME_RE = /women|femenin|feminin|femminile|frauen|femenil|\(w\)| w$|\bu ?(15|16|17|18|19|20|21|23)\b|youth|junior|juvenil|reserve|amateur|primavera|academy|\bii$|\biii$|next pro|development/;
+    var EXCLUDE_TEAM_RE = /( w| u ?(15|16|17|18|19|20|21|23)| ii| iii| women| reserves?)$/;
+
+    function matchRule(list, country, name) {
+      for (var i = 0; i < list.length; i++) {
+        if (list[i][0].test(country) && list[i][1].test(name)) { return i; }
+      }
+      return -1;
+    }
+
+    // Note de priorité : plus elle est basse, plus le match passe devant
+    function classifyFixture(f) {
+      var lg = f.league || {};
+      var country = norm(lg.country);
+      var name = norm(lg.name);
+      var home = norm(f.teams && f.teams.home && f.teams.home.name);
+      var away = norm(f.teams && f.teams.away && f.teams.away.name);
+      var d = new Date(f.fixture.date);
+      var h = parisHour(d.getTime());
+      var score = 3;
+      var rank = 99;
+
+      var lowTier = EXCLUDE_NAME_RE.test(name) || EXCLUDE_TEAM_RE.test(home) || EXCLUDE_TEAM_RE.test(away);
+
+      var intl = -1;
+      if (!/club/.test(name) && (INTL_COUNTRY_RE.test(country) || country === "")) {
+        for (var i = 0; i < INTL_RULES.length; i++) {
+          if (INTL_RULES[i][0].test(name)) { intl = INTL_RULES[i][1]; break; }
+        }
+      }
+
+      if (lowTier) {
+        score = 4;
+      } else if (intl >= 0) {
+        score = 0;
+        rank = intl;
+      } else {
+        var e = matchRule(EARLY_LEAGUES, country, name);
+        var l = matchRule(ELITE_LEAGUES, country, name);
+        var south = SOUTH_AMERICA_RE.test(country);
+        if (e >= 0 || l >= 0 || south) {
+          var inWindow = (e >= 0 && h < 12) || (l >= 0 && h >= 12 && h < 22) || (south && h >= 21);
+          score = inWindow ? 1 : 2;
+          rank = 60;
+          if (south) { rank = 45; }
+          if (e >= 0) { rank = Math.min(rank, 30 + e); }
+          if (l >= 0) { rank = Math.min(rank, 10 + l); }
+        }
+      }
+      var hourPref = (h >= 12 && h < 22) ? 0 : 1;
+      return { prio: score * 10000 + rank * 100 + hourPref * 50, ts: d.getTime() };
+    }
+
+    var PH_FMT = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", hour: "numeric", hourCycle: "h23" });
+    function parisHour(ms) { return parseInt(PH_FMT.format(new Date(ms)), 10); }
+
+
+    function fetchRaw(sport, date) {
+      return fetch(PROXY_URL + "?sport=" + sport + "&date=" + date)
+        .then(function(res) { return res.json(); })
+        .then(function(data) { return (data && data.response && data.response.length) ? data.response : []; })
+        .catch(function(err) { console.warn("Erreur API-Sports", err); return []; });
+    }
+
+    var CANDIDATES = { football: [] };
+
+    function mapFootball(item) {
+      var f = item.f;
+      var isLive = f.fixture && f.fixture.status && (f.fixture.status.short === "1H" || f.fixture.status.short === "2H" || f.fixture.status.short === "HT");
+      var scoreText = isLive && f.goals ? (f.goals.home || 0) + " - " + (f.goals.away || 0) + " (" + (f.fixture.status.elapsed || "") + "')" : null;
+      var st = (f.fixture && f.fixture.status && f.fixture.status.short) || "";
+      var isFinished = (st === "FT" || st === "AET" || st === "PEN");
+      var ft = (f.score && f.score.fulltime && f.score.fulltime.home !== null && f.score.fulltime.home !== undefined) ? f.score.fulltime : f.goals;
+      return {
+        id: "api-fb-" + f.fixture.id,
+        fxId: f.fixture.id,
+        leagueId: f.league && f.league.id,
+        season: f.league && f.league.season,
+        homeId: f.teams.home.id,
+        awayId: f.teams.away.id,
+        finished: isFinished,
+        scoreHome: isFinished && ft ? ft.home : null,
+        scoreAway: isFinished && ft ? ft.away : null,
+        statusNote: st === "AET" || st === "PEN" ? "90 min" : "Terminé",
+        prio: item.k.prio,
+        ts: item.k.ts,
+        sport: "football",
+        competition: (f.league && f.league.name) || "Football",
+        country: (f.league && f.league.country) || "Europe",
+        flag: getCountryFlag(f.league && f.league.country),
+        time: new Date(f.fixture.date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Douala" }),
+        homeTeam: f.teams.home.name,
+        awayTeam: f.teams.away.name,
+        isLive: isLive,
+        liveScore: scoreText
+      };
+    }
+
+    // Récupère les vrais matchs d'un sport pour la date choisie (sans afficher)
+    function fetchSport(sport) {
+      var d0 = getFormattedDate(currentDayOffset);
+      return fetchRaw("football", d0).then(function(list) {
+        var scored = list.map(function(fx) { return { f: fx, k: classifyFixture(fx) }; });
+        scored.sort(function(a, b) { return (a.k.prio - b.k.prio) || (a.k.ts - b.k.ts); });
+        scored = scored.slice(0, 60);
+        scored.sort(function(a, b) { return a.k.ts - b.k.ts; });
+        CANDIDATES.football = scored.map(mapFootball);
+        MASTER_DATABASE.football = CANDIDATES.football;
+      });
+    }
+
+    // Liste complète d'un sport
+    function fetchRealMatches(sport) {
+      showLoader(sport + " - " + getFormattedDate(currentDayOffset));
+      fetchSport(sport).then(function() {
+        showLoader("calcul des pronostics");
+        return loadPredictions(sport, currentDayOffset >= 0);
+      }).then(function(pending) {
+        updateButtonsUI();
+        render();
+        schedulePredictionRetry(sport, pending, 0);
+      });
+    }
+
+    // Pronostics (calculés et enregistrés par le relais avant le coup d'envoi)
+    var PREDICTIONS = {};
+
+    function pkey(sport, id) { return (sport === "football" ? "f" : "b") + id; }
+
+    function applyPredicted(sport) {
+      var cap = 50;
+      var c = (CANDIDATES[sport] || []).filter(function(m) { return PREDICTIONS[pkey(sport, m.fxId)]; });
+      c.sort(function(a, b) { return (a.prio - b.prio) || (a.ts - b.ts); });
+      MASTER_DATABASE[sport] = c.slice(0, cap).sort(function(a, b) { return a.ts - b.ts; });
+    }
+
+    function loadPredictions(sport, create) {
+      var list = (CANDIDATES[sport] || []).filter(function(x) { return x.fxId && x.leagueId && x.season && x.homeId && x.awayId; });
+      if (!list.length) { applyPredicted(sport); return Promise.resolve(0); }
+      var byP = list.slice().sort(function(a, b) { return (a.prio - b.prio) || (a.ts - b.ts); });
+      var m = byP.map(function(x) { return [x.fxId, x.leagueId, x.season, x.homeId, x.awayId, x.ts].join("_"); }).join(",");
+      var deep = "";
+      if (create && sport === "football") {
+        var up = list.filter(function(x) { return x.ts > Date.now(); }).sort(function(a, b) { return (a.prio - b.prio) || (a.ts - b.ts); });
+        var lim = currentDayOffset === 0 ? 50 : 20;
+        deep = "&deep=" + up.slice(0, lim).map(function(x) { return x.fxId; }).join(",");
+      }
+      var url = PROXY_URL + "/preds?sport=" + sport + "&date=" + getFormattedDate(currentDayOffset) + "&m=" + m + (create ? "&create=1" : "") + deep;
+      return fetch(url)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          var p = (data && data.preds) ? data.preds : {};
+          for (var k in p) { if (!p[k].none) { PREDICTIONS[pkey(sport, k)] = p[k]; } }
+          applyPredicted(sport);
+          return (data && data.pending) ? data.pending : 0;
+        })
+        .catch(function(err) {
+          console.warn("Pronostics indisponibles", err);
+          applyPredicted(sport);
+          return 0;
+        });
+    }
+
+    // Le relais traite quelques ligues à la fois (limite par minute de l'API) : on relance si besoin
+    function schedulePredictionRetry(sport, pending, attempt) {
+      if (!pending || attempt >= 12 || currentDayOffset < 0) { return; }
+      setTimeout(function() {
+        loadPredictions(sport, true).then(function(p) {
+          render();
+          schedulePredictionRetry(sport, p, attempt + 1);
+        });
+      }, 65000);
+    }
+
+    function getHomePool() {
+      return MASTER_DATABASE.football.slice()
+        .sort(function(a, b) { return (a.prio - b.prio) || (a.ts - b.ts); })
+        .slice(0, 10)
+        .sort(function(a, b) { return a.ts - b.ts; });
+    }
+
+    function esc(t) {
+      return String(t === undefined || t === null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function formFr(f) {
+      var map = { W: "V", D: "N", L: "D" };
+      return String(f || "").split("").map(function(c) { return map[c] || c; }).join("");
+    }
+
+    // Résultat du pronostic principal (score à 90 minutes en football). null = pas vérifiable
+    function evaluatePrediction(pr, m) {
+      if (!pr || pr.late || !m.finished || m.scoreHome === null || m.scoreAway === null) { return null; }
+      var h = m.scoreHome;
+      var a = m.scoreAway;
+      var c = pr.pick.code;
+      var won = (c === "1" && h > a) || (c === "2" && a > h) || (c === "1N" && h >= a) || (c === "N2" && a >= h);
+      return { won: won, exact: m.sport === "football" && pr.exact === (h + "-" + a) };
+    }
+
+    function predLabel(pr, m) {
+      var c = pr.pick.code;
+      if (c === "1") { return "Victoire " + m.homeTeam; }
+      if (c === "2") { return "Victoire " + m.awayTeam; }
+      if (c === "1N") { return m.homeTeam + " ou Nul"; }
+      return "Nul ou " + m.awayTeam;
+    }
+
+    // Cadre central : VS, ou score (gris / vert / rouge ; chiffres bleus si score exact)
+    function buildScoreBox(m, v) {
+      if (!(m.finished && m.scoreHome !== null && m.scoreAway !== null)) {
+        return '<div class="px-1 text-center shrink-0"><span class="text-[10px] font-black text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full border border-slate-700/60">VS</span></div>';
+      }
+      var frame = "border-slate-500/70 bg-slate-800/90";
+      var digits = "text-slate-100";
+      var note = m.statusNote || "Terminé";
+      var noteColor = "text-slate-400";
+      if (v) {
+        if (v.won) { frame = "border-green-500 bg-green-600/30"; note = "&#10004; Validé"; noteColor = "text-green-300"; }
+        else { frame = "border-slate-700 bg-slate-950"; note = "&#10006; Perdu"; noteColor = "text-slate-500"; }
+        if (v.exact) { digits = "text-blue-500"; note = "&#10004; Score exact"; }
+      }
+      return '<div class="px-1 text-center shrink-0"><div class="min-w-[68px] px-2.5 py-1 rounded-lg border ' + frame + '"><span class="block text-sm font-black ' + digits + ' tabular-nums tracking-wider">' + m.scoreHome + ' - ' + m.scoreAway + '</span><span class="block text-[8px] font-semibold ' + noteColor + ' uppercase">' + note + '</span></div></div>';
+    }
+
+
+    // Page d'accueil : charge uniquement le football
+    function loadHome() {
+      showLoader("accueil - " + getFormattedDate(currentDayOffset));
+      fetchSport("football").then(function() {
+        showLoader("calcul des pronostics");
+        return loadPredictions("football", currentDayOffset >= 0);
+      }).then(function(pending) {
+        render();
+        schedulePredictionRetry("football", pending, 0);
+      });
+    }
+
+    function getCountryFlag(countryName) {
+      if (!countryName) { return "🌍"; }
+      var c = countryName.toLowerCase();
+      if (c.indexOf("england") !== -1 || c.indexOf("angleterre") !== -1) { return "🏴󠁧󠁢󠁥󠁮󠁧󠁿"; }
+      if (c.indexOf("spain") !== -1 || c.indexOf("espagne") !== -1) { return "🇪🇸"; }
+      if (c.indexOf("italy") !== -1 || c.indexOf("italie") !== -1) { return "🇮🇹"; }
+      if (c.indexOf("germany") !== -1 || c.indexOf("allemagne") !== -1) { return "🇩🇪"; }
+      if (c.indexOf("france") !== -1) { return "🇫🇷"; }
+      if (c.indexOf("usa") !== -1 || c.indexOf("united") !== -1) { return "🇺🇸"; }
+      if (c.indexOf("brazil") !== -1 || c.indexOf("bresil") !== -1) { return "🇧🇷"; }
+      if (c.indexOf("argentina") !== -1 || c.indexOf("argentine") !== -1) { return "🇦🇷"; }
+      return "🇪🇺";
+    }
+
+    function selectSport(sport) {
+      currentSport = "football";
+      currentView = "all_football";
+      expandedMatchIds = {};
+      updateButtonsUI();
+      window.scrollTo(0, 0);
+      fetchRealMatches("football");
+    }
+
+    function switchView(view) {
+      currentView = view;
+      expandedMatchIds = {};
+      updateButtonsUI();
+      window.scrollTo(0, 0);
+      render();
+    }
+
+    function updateButtonsUI() {
+      var btnHome = document.getElementById("btn-home");
+      var btnFoot = document.getElementById("btn-football");
+      var secTitle = document.getElementById("section-title");
+      var secHint = document.getElementById("section-hint");
+      var base = "p-1.5 rounded-xl border text-left transition-all active:scale-[0.98] ";
+      var off = "bg-slate-900/90 border-slate-800";
+      var on = "bg-emerald-950/70 border-emerald-500/70 shadow-md";
+      var home = currentView === "home_top6";
+      if (btnHome) { btnHome.className = base + (home ? on : off); }
+      if (btnFoot) { btnFoot.className = base + (home ? off : on); }
+      if (home) {
+        if (secTitle) { secTitle.innerHTML = "Top 10 Foot Élite"; }
+        if (secHint) { secHint.textContent = "Sélection élite"; }
+      } else {
+        if (secTitle) { secTitle.innerHTML = "Liste Complète Football (" + MASTER_DATABASE.football.length + ")"; }
+        if (secHint) { secHint.textContent = "Classés par heure de match"; }
+      }
+    }
+
+    function toggleMatch(id) {
+      var wasOpen = !!expandedMatchIds[id];
+      expandedMatchIds = {};
+      if (!wasOpen) { expandedMatchIds[id] = true; }
+      render();
+    }
+
+    function refreshData() {
+      var icon = document.getElementById("icon-refresh");
+      if (icon) { icon.classList.add("animate-spin"); }
+      if (currentView === "home_top6") {
+        loadHome();
+      } else {
+        fetchRealMatches(currentSport);
+      }
+    }
+
+    function renderCountriesBar() {
+      var bar = document.getElementById("countries-bar");
+      if (!bar) { return; }
+      bar.innerHTML = COUNTRIES_LIST.map(function(c) {
+        var active = currentCountryFilter === c.id;
+        return '<button onclick="setCountryFilter(\'' + c.id + '\')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all flex items-center gap-1 shrink-0 ' +
+          (active ? 'bg-emerald-500 text-slate-950 shadow-sm' : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white') +
+          '"><span>' + c.flag + '</span><span>' + c.label + '</span></button>';
+      }).join("");
+    }
+
+    function setCountryFilter(id) {
+      currentCountryFilter = id;
+      var activeLabel = document.getElementById("active-country-label");
+      if (activeLabel) {
+        var found = COUNTRIES_LIST.find(function(c) { return c.id === id; });
+        activeLabel.textContent = found ? found.label : "Tous";
+      }
+      renderCountriesBar();
+      render();
+    }
+
+    // ========================================================================
+    // GÉNÉRATION DE BANNIÈRE GOOGLE ADSENSE OFFICIELLE (IN-FEED NATIVE)
+    // ========================================================================
+    function isAdAfter(n) {
+      if (n === 4 || n === 14 || n === 25 || n === 40) { return true; }
+      return n > 40 && n % 10 === 0;
+    }
+
+    function generateAdSenseInFeedBanner(slotIndex, labelTag) {
+      return '<div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2 my-1.5 shadow-sm overflow-hidden">' +
+        '<div class="flex items-center justify-between text-[9px] text-slate-400 mb-1 pb-0.5 border-b border-slate-800/60">' +
+          '<div class="flex items-center gap-1.5">' +
+            '<span class="bg-amber-400 text-slate-950 font-black px-1 rounded-sm text-[8px] uppercase">Annonce</span>' +
+            '<span class="font-semibold text-slate-300">Google AdSense</span>' +
+            '<span class="text-slate-500">&middot; ' + labelTag + '</span>' +
+          '</div>' +
+          '<span class="text-[8px] text-emerald-400 font-mono">ca-pub-8178614539822210</span>' +
+        '</div>' +
+        '<div class="w-full min-h-[90px] flex items-center justify-center text-center">' +
+          '<ins class="adsbygoogle"' +
+               ' style="display:block; width:100%; min-height:90px;"' +
+               ' data-ad-client="ca-pub-8178614539822210"' +
+               ' data-ad-slot="default"' +
+               ' data-ad-format="auto"' +
+               ' data-full-width-responsive="true"></ins>' +
+        '</div>' +
+      '</div>';
+    }
+
+    // Activation sécurisée des annonces AdSense
+    function activateAdSenseAds() {
+      try {
+        if (window.adsbygoogle && window.adsbygoogle.loaded !== false) {
+          var ads = document.querySelectorAll(".adsbygoogle");
+          for (var i = 0; i < ads.length; i++) {
+            if (!ads[i].getAttribute("data-adsbygoogle-status")) {
+              (window.adsbygoogle = window.adsbygoogle || []).push({});
+            }
+          }
+        }
+      } catch (e) {
+        // En cas de bloqueur de publicité
+      }
+    }
+
+    function render() {
+      var container = document.getElementById("matches-container");
+      var icon = document.getElementById("icon-refresh");
+      if (icon) { icon.classList.remove("animate-spin"); }
+      if (!container) { return; }
+
+      var pool = [];
+      if (currentView === "home_top6") {
+        pool = getHomePool();
+      } else {
+        pool = MASTER_DATABASE.football;
+      }
+
+      if (currentCountryFilter !== "Tous") {
+        pool = pool.filter(function(m) {
+          if (currentCountryFilter === "Europe") { return m.country === "Europe"; }
+          if (currentCountryFilter === "Angleterre") { return m.country === "Angleterre" || m.country === "England"; }
+          if (currentCountryFilter === "Espagne") { return m.country === "Espagne" || m.country === "Spain"; }
+          if (currentCountryFilter === "Italie") { return m.country === "Italie" || m.country === "Italy"; }
+          if (currentCountryFilter === "Allemagne") { return m.country === "Allemagne" || m.country === "Germany"; }
+          if (currentCountryFilter === "France") { return m.country === "France"; }
+          if (currentCountryFilter === "USA") { return m.country === "USA"; }
+          return true;
+        });
+      }
+
+      if (pool.length === 0) {
+        container.innerHTML = '<div class="p-6 text-center bg-slate-900 rounded-xl border border-slate-800"><p class="text-xs text-slate-400">' + (currentDayOffset < 0 ? 'Aucun pronostic n\'avait été enregistré pour ce jour ou ce filtre : l\'historique se construit au fil des jours.' : 'Aucun match avec pronostic pour cette date ou ce filtre. Les pronostics se calculent par petits lots : patientez environ une minute puis réessayez.') + '</p></div>';
+        return;
+      }
+
+      var html = "";
+      var adCounter = 0;
+
+      for (var i = 0; i < pool.length; i++) {
+        var match = pool[i];
+        var isExpanded = !!expandedMatchIds[match.id];
+        var matchNumber = i + 1;
+        var pr = PREDICTIONS[pkey(match.sport, match.fxId)];
+        var verdict = evaluatePrediction(pr, match);
+
+        var proBox;
+        if (pr) {
+          proBox = '<div class="bg-gradient-to-r from-pink-950/50 to-slate-900 border border-pink-500/30 rounded-lg p-2 mb-2 flex items-center justify-between gap-2 shadow-inner">' +
+            '<div class="min-w-0">' +
+              '<div class="text-[9px] font-black text-pink-400 uppercase tracking-wider mb-0.5">PRONOSTIC PRINCIPAL</div>' +
+              '<span class="text-xs font-bold text-white block truncate leading-tight">' + esc(predLabel(pr, match)) + '</span>' +
+            '</div>' +
+            '<div class="text-right shrink-0">' +
+              '<span class="text-[8px] text-slate-400 uppercase block">FIABILITÉ</span>' +
+              '<span class="text-xs font-black text-pink-400 tabular-nums">' + esc(pr.pick.prob) + '%</span>' +
+            '</div>' +
+          '</div>';
+        } else {
+          proBox = '<div class="bg-slate-950/60 border border-slate-800 rounded-lg p-2 mb-2"><span class="text-[10px] text-slate-400">Pronostic en cours de calcul…</span></div>';
+        }
+
+        var detailBox = '';
+        if (pr && match.sport === "football") {
+          detailBox = '<div class="mt-2 pt-2 border-t border-slate-800 space-y-2 text-[11px]">' +
+            '<div class="grid grid-cols-3 gap-1.5">' +
+              '<div class="bg-slate-950 p-2 rounded-lg border border-slate-800"><span class="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">Total Buts</span><span class="text-[11px] font-extrabold text-sky-400 leading-tight block">' + (pr.ou.code === "O25" ? "Plus de 2.5 buts" : "Moins de 2.5 buts") + '</span></div>' +
+              '<div class="bg-slate-950 p-2 rounded-lg border border-slate-800"><span class="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">2 Équipes Marquent</span><span class="text-[11px] font-extrabold text-amber-400 leading-tight block">' + (pr.btts.yes ? "Oui" : "Non") + ' (' + esc(pr.btts.prob) + '%)</span></div>' +
+              '<div class="bg-slate-950 p-2 rounded-lg border border-slate-800"><span class="text-[9px] text-slate-400 font-bold uppercase block mb-0.5">Score Exact</span><span class="text-xs font-black text-pink-400 font-mono tracking-wider block">' + esc(String(pr.exact).replace("-", " - ")) + '</span></div>' +
+            '</div>' +
+            '<div class="bg-slate-950/90 p-2 rounded-lg border border-slate-800 text-[10px] text-slate-300 space-y-1">' +
+              '<div class="flex items-center justify-between"><span class="text-slate-400">Probabilités 1 / N / 2 :</span><strong class="text-white">' + esc(pr.pct.h) + '% &middot; ' + esc(pr.pct.d) + '% &middot; ' + esc(pr.pct.a) + '%</strong></div>' +
+              (pr.ctx && pr.ctx.form ? '<div class="flex items-center justify-between"><span class="text-slate-400">Forme récente :</span><strong class="text-white">' + esc(pr.ctx.form[0]) + '% &middot; ' + esc(pr.ctx.form[1]) + '%</strong></div>' : '') +
+              (pr.ctx && pr.ctx.fs && pr.ctx.fs[0] && pr.ctx.fs[1] ? '<div class="flex items-center justify-between"><span class="text-slate-400">5 derniers matchs :</span><strong class="text-white font-mono">' + esc(formFr(pr.ctx.fs[0])) + ' &middot; ' + esc(formFr(pr.ctx.fs[1])) + '</strong></div>' : '') +
+              (pr.ctx && pr.ctx.h2h ? '<div class="flex items-center justify-between"><span class="text-slate-400">Confrontations directes :</span><strong class="text-white">' + esc(pr.ctx.h2h[0]) + '% &middot; ' + esc(pr.ctx.h2h[1]) + '%</strong></div>' : '') +
+              '<div class="text-slate-500">' + (pr.deep ? 'Analyse approfondie : classement, forme récente et confrontations directes.' : 'Modèle statistique : classement, buts marqués et encaissés à domicile et à l\'extérieur.') + '</div>' +
+            '</div>' +
+          '</div>';
+        }
+
+        html += '<div onclick="toggleMatch(\'' + match.id + '\')" class="bg-slate-900/90 hover:bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-sm transition-all cursor-pointer">' +
+          '<div class="px-3 py-1.5 bg-slate-950/70 border-b border-slate-800/80 flex items-center justify-between text-[11px]">' +
+            '<div class="flex items-center gap-1.5 min-w-0">' +
+              '<span class="text-xs">' + (match.flag || "🌍") + '</span>' +
+              '<span class="font-bold text-sky-400 truncate">' + match.competition + '</span>' +
+              '<span class="text-slate-600">&middot;</span>' +
+              '<span class="text-[10px] text-slate-400 uppercase">' + match.country + '</span>' +
+            '</div>' +
+            '<div class="flex items-center gap-1.5 shrink-0">' +
+              (match.isLive && match.liveScore ? '<span class="bg-red-950/80 border border-red-500/60 text-red-400 font-extrabold text-[10px] px-1.5 py-0.5 rounded animate-pulse">LIVE : ' + match.liveScore + '</span>' : '<span class="text-[10px] font-semibold text-slate-300 bg-slate-800/80 px-1.5 py-0.5 rounded">' + match.time + '</span>') +
+              '<span class="text-slate-400 text-xs">' + (isExpanded ? "&#9650;" : "&#9660;") + '</span>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="p-2.5 sm:p-3">' +
+            '<div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-2">' +
+              '<div class="min-w-0"><span class="font-bold text-xs sm:text-sm text-white truncate block leading-tight">' + match.homeTeam + '</span><span class="text-[9px] text-slate-400 font-medium">Dom</span></div>' +
+              buildScoreBox(match, verdict) +
+              '<div class="min-w-0 text-right"><span class="font-bold text-xs sm:text-sm text-white truncate block leading-tight">' + match.awayTeam + '</span><span class="text-[9px] text-slate-400 font-medium">Ext</span></div>' +
+            '</div>' +
+
+            proBox +
+
+            (!isExpanded ? '<div class="text-[10px] text-slate-400 pt-1 flex items-center justify-between border-t border-slate-800/60"><span>Total Over/Under, GG &amp; Score Exact</span><span class="text-pink-400 font-semibold">Toucher pour déplier &rarr;</span></div>' : '') +
+
+            (isExpanded ? detailBox : '') +
+          '</div></div>';
+
+        // PUBLICITÉS : après les matchs 4, 14, 25 et 40, puis tous les 10 matchs (jamais après le dernier)
+        if (isAdAfter(matchNumber) && matchNumber < pool.length) {
+          adCounter++;
+          html += generateAdSenseInFeedBanner(adCounter, "Après " + matchNumber + " matchs");
+        }
+      }
+
+      container.innerHTML = html;
+      setTimeout(activateAdSenseAds, 100);
+    }
+
+    function openPrivacyModal() {
+      var modal = document.getElementById("privacy-modal");
+      if (modal) { modal.classList.remove("hidden"); }
+    }
+
+    function closePrivacyModal() {
+      var modal = document.getElementById("privacy-modal");
+      if (modal) { modal.classList.add("hidden"); }
+    }
+
+    window.onload = function() {
+      updateDateDisplay();
+      renderCountriesBar();
+      loadHome();
+    };
+  </script>
+</body>
+</html>
